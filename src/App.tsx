@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { QuestionCard } from './components/QuestionCard';
 import { questions } from './data/questions';
-import type { TestResult } from './types';
+import { submitTest, getUserStats } from './api';
 
 function App() {
   const [age, setAge] = useState<number | null>(null);
@@ -35,52 +35,37 @@ function App() {
     localStorage.setItem('answers', JSON.stringify(answers));
   }, [age, questionIndex, answers]);
 
-  const handleAgeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setAge(parseInt(event.target.value));
-  };
-
   const handleAnswerSubmit = (answer: string) => {
     const newAnswers = [...answers, answer];
     setAnswers(newAnswers);
     setQuestionIndex(questionIndex + 1);
-  };
+  }
 
-  const calculateIqScore = (): TestResult => {
-    const correctCount = answers.filter((answer, index) => 
-      answer === questions[index].correctAnswer
-    ).length;
-    
-    const baseScore = 80;
-    const pointsPerQuestion = 10;
-    const ageBonus = age ? Math.min(20, age * 0.5) : 0;
-    
-    return {
-      iqScore: baseScore + (correctCount * pointsPerQuestion) + ageBonus,
-      timeSpent: 0, // TODO: Implement timer
-      correctAnswers: correctCount,
-      totalQuestions: questions.length
-    };
-  };
-
-  const handleComplete = () => {
-    const result = calculateIqScore();
-    setIqScore(result.iqScore);
-    setTestCompleted(true);
+  const handleComplete = async () => {
+    if (age !== null) {
+      const result = await submitTest({ age: age, answers: answers });
+      setIqScore(result.iqScore);
+      setTestCompleted(true);
+    }
   };
 
   useEffect(() => {
-    // Simulate fetching user count from backend
-    setTimeout(() => {
-      setUserCount(1234);
-    }, 1000);
+    const fetchUserStats = async () => {
+      const stats = await getUserStats();
+      setUserCount(stats.userCount);
+    };
+
+    fetchUserStats();
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-purple-100 py-12"> {/* Improved background */}
-      <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8"> {/* Responsive container */}
+    <div className="container min-h-screen bg-gradient-to-br from-green-200 to-blue-300 py-12 mx-auto">
+      {/* Improved background */}
+      <div className="max-w-3xl px-4 sm:px-6 lg:px-8">
+        {/* Responsive container */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="p-8">
-            <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">
+            <h1 className="text-3xl font-bold text-center text-blue-700 mb-8">
               IQ Test
             </h1>
 
@@ -89,13 +74,28 @@ function App() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Enter your age to begin
                 </label>
-                <input
-                  type="number"
-                  min="5"
-                  max="120"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  onChange={handleAgeChange}
-                />
+                <div className="flex">
+                  <input
+                    type="number"
+                    min="5"
+                    max="120"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        setAge(parseInt((e.target as HTMLInputElement).value));
+                      }
+                    }}
+                  />
+                  <button
+                    className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded ml-2"
+                    onClick={(e) => {
+                      const ageInput = (e.target as HTMLButtonElement).parentElement?.querySelector('input') as HTMLInputElement;
+                      setAge(parseInt(ageInput.value));
+                    }}
+                  >
+                    Submit
+                  </button>
+                </div>
               </div>
             )}
 
@@ -108,13 +108,13 @@ function App() {
 
             {age && questionIndex === questions.length && !testCompleted && (
               <div className="text-center">
-                <button
-                  className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-                  onClick={handleComplete}
-                >
-                  Complete Test
-                </button>
-              </div>
+                  <button
+                    className="bg-green-400 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
+                    onClick={handleComplete}
+                  >
+                    Complete Test
+                  </button>
+                </div>
             )}
 
             {testCompleted && iqScore && (
@@ -123,7 +123,7 @@ function App() {
 
             {/* User Statistics */}
             <div className="mt-6 text-center">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-purple-500">
                 <span className="font-semibold">{userCount}</span> users have taken the test in the last 24 hours.
               </p>
             </div>
@@ -137,13 +137,16 @@ function App() {
 function Results({ iqScore }: { iqScore: number }) {
   return (
     <div className="mt-6 text-center">
-      <p className="text-lg font-semibold text-gray-700">Your IQ Score: {iqScore}</p>
-      <p className="text-sm text-gray-500">
+      <p className="text-lg font-semibold text-purple-700">Your IQ Score: {iqScore}</p>
+      <p className="text-sm text-purple-500">
         Want to know your relative standing and global percentile?
-        <a href="#" className="text-blue-500 hover:text-blue-700 ml-1">
-          Upgrade to Premium
-        </a>
       </p>
+      <button
+        className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded mt-2"
+        onClick={() => alert('Premium features are not available locally.')}
+      >
+        Upgrade to Premium
+      </button>
     </div>
   );
 }

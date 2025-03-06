@@ -3,7 +3,7 @@ export interface Question {
   text: string;
   options: string[];
   correctAnswer: string;
-  type: 'logical' | 'mathematical' | 'verbal' | 'spatial';
+  type: 'logical' | 'mathematical' | 'verbal' | 'spatial' | 'general';
   difficulty: 1 | 2 | 3;
 }
 
