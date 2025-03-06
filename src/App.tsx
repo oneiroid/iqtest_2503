@@ -9,7 +9,8 @@ function App() {
   const [questionIndex, setQuestionIndex] = useState<number>(0);
   const [answers, setAnswers] = useState<string[]>([]);
   const [testCompleted, setTestCompleted] = useState<boolean>(false);
-  const [userCount, setUserCount] = useState<number>(0); // Placeholder for user count
+  const [userCount, setUserCount] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(false); // Added loading state
 
   useEffect(() => {
     // Load saved progress from local storage, but only if age is already entered
@@ -43,16 +44,26 @@ function App() {
 
   const handleComplete = async () => {
     if (age !== null) {
-      const result = await submitTest({ age: age, answers: answers });
-      setIqScore(result.iqScore);
-      setTestCompleted(true);
+      setLoading(true);
+      try {
+        const result = await submitTest({ age: age, answers: answers });
+        setIqScore(result.iqScore);
+        setTestCompleted(true);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     const fetchUserStats = async () => {
-      const stats = await getUserStats();
-      setUserCount(stats.userCount);
+      setLoading(true);
+      try {
+        const stats = await getUserStats();
+        setUserCount(stats.userCount);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchUserStats();
@@ -62,6 +73,11 @@ function App() {
     <div className="container min-h-screen bg-gradient-to-br from-green-200 to-blue-300 py-12 mx-auto">
       {/* Improved background */}
       <div className="max-w-3xl px-4 sm:px-6 lg:px-8">
+        {loading && (
+          <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-gray-500 bg-opacity-50 z-50">
+            <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-purple-500"></div>
+          </div>
+        )}
         {/* Responsive container */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="p-8">

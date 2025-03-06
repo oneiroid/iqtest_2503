@@ -36,13 +36,21 @@ export const submitTest = async (
 
   const iqScore = baseScore + correctCount * pointsPerQuestion + ageBonus;
 
-  return { iqScore };
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({ iqScore });
+    }, 500); // Simulate API latency
+  });
 };
 
 // Placeholder function for fetching user statistics
 export const getUserStats = async (): Promise<UserStatsResponse> => {
   // Simulate fetching user count from backend
-  return { userCount: 5000 };
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({ userCount: 5000 });
+    }, 300); // Simulate API latency
+  });
 };
 
 // Placeholder function for fetching premium relative standing
